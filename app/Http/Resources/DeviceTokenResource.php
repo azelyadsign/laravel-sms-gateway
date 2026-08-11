@@ -14,6 +14,7 @@ class DeviceTokenResource extends JsonApiResource
         'id',
         'name',
         'type',
+        'token',
         'is_active',
         'created_at',
     ];

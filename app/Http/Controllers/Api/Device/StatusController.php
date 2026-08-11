@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\Api\Android;
+namespace App\Http\Controllers\Api\Device;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\Android\StatusRequest;
+use App\Http\Requests\Api\Device\StatusRequest;
 use App\Models\DeviceToken;
 use App\Models\SmsLog;
 use Illuminate\Http\JsonResponse;

@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests\Api\Android;
+namespace App\Http\Requests\Api\Device;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class ReplyRequest extends FormRequest
+class StatusRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,15 +23,10 @@ class ReplyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'event' => ['required', 'string', 'max:255'],
-            'data' => ['required', 'array'],
-            'data.phone' => ['required', 'string', 'max:20'],
-            'data.message' => ['nullable', 'string', 'max:1600'],
-            'data.external_id' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'string', 'max:50'],
+            'sms_log_id' => ['required', 'string', 'exists:sms_logs,id'],
+            'status' => ['required', 'string', 'max:50'],
+            'raw_response' => ['nullable', 'string'],
             'external_id' => ['nullable', 'string', 'max:100'],
-            'raw_response' => ['nullable'],
-            'replied_at' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

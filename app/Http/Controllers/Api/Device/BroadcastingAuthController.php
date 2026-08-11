@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Android;
+namespace App\Http\Controllers\Api\Device;
 
 use App\Http\Controllers\Controller;
 use App\Models\DeviceToken;

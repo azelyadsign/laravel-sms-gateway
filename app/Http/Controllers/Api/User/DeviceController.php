@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\User;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\User\UpdateDeviceRequest;
+use App\Http\Requests\Api\User\DeviceRequest;
 use App\Http\Resources\DeviceTokenResource;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
@@ -32,7 +32,7 @@ class DeviceController extends Controller
      */
     #[QueryParameter(name: 'name', description: 'Device name', required: true, example: 'My iPhone')]
     #[QueryParameter(name: 'type', description: 'Device type (ios, android)', required: true, example: 'android')]
-    public function store(UpdateDeviceRequest $request): JsonResponse
+    public function store(DeviceRequest $request): JsonResponse
     {
         $device = $request->user()->device()->updateOrCreate([], [
             'name' => $request->validated('name'),

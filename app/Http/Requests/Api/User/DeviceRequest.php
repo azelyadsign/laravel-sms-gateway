@@ -6,7 +6,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateDeviceRequest extends FormRequest
+class DeviceRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,7 +25,7 @@ class UpdateDeviceRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'string', Rule::in(['android', 'ios', 'esp32'])],
+            'type' => ['required', 'string', Rule::in(['android', 'iot'])],
         ];
     }
 }

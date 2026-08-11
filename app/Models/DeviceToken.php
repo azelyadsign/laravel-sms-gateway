@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'type', 'token', 'is_active', 'user_id'])]
-#[Hidden(['token'])]
 class DeviceToken extends Model
 {
     /** @use HasFactory<DeviceTokenFactory> */

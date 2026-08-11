@@ -52,8 +52,8 @@ Route::prefix('v1')->group(function () {
     // Admin routes
     Route::prefix('admin')->middleware(['auth:api', 'role:Admin'])->group(function () {
         Route::get('/users', [AdminController::class, 'index']);
-        Route::post('/users/{user}/approve', [AdminController::class, 'approve']);
-        Route::post('/users/{user}/revoke', [AdminController::class, 'revoke']);
+        Route::patch('/users/{user}/approve', [AdminController::class, 'approve']);
+        Route::patch('/users/{user}/revoke', [AdminController::class, 'revoke']);
     });
 
     // Android Device Endpoints (static device token)
