@@ -1,9 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\AdminController;
-use App\Http\Controllers\Api\Android\BroadcastingAuthController;
-use App\Http\Controllers\Api\Android\ReplyController;
-use App\Http\Controllers\Api\Android\StatusController;
+use App\Http\Controllers\Api\Device\BroadcastingAuthController;
+use App\Http\Controllers\Api\Device\ReplyController;
+use App\Http\Controllers\Api\Device\StatusController;
 use App\Http\Controllers\Api\Auth\AppAuthController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Sms\SmsController;
@@ -57,7 +57,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // Android Device Endpoints (static device token)
-    Route::prefix('android')->middleware('device-token')->group(function () {
+    Route::prefix('device')->middleware('device-token')->group(function () {
         Route::post('/broadcasting/auth', [BroadcastingAuthController::class, 'authenticate']);
         Route::post('/reply', [ReplyController::class, 'handle']);
         Route::post('/status', [StatusController::class, 'update']);
