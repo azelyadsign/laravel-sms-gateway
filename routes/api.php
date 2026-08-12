@@ -1,11 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\AdminController;
+use App\Http\Controllers\Api\Auth\AppAuthController;
+use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Device\BroadcastingAuthController;
 use App\Http\Controllers\Api\Device\ReplyController;
 use App\Http\Controllers\Api\Device\StatusController;
-use App\Http\Controllers\Api\Auth\AppAuthController;
-use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Sms\SmsController;
 use App\Http\Controllers\Api\User\DeviceController;
 use App\Http\Resources\UserResource;
@@ -44,8 +44,10 @@ Route::prefix('v1')->group(function () {
 
     // SMS (requires auth + send-sms permission)
     Route::middleware(['auth:api', 'permission:send-sms', 'throttle:30,1'])->group(function () {
+        Route::get('/sms', [SmsController::class, 'index']);
         Route::post('/sms/send', [SmsController::class, 'send']);
         Route::get('/sms/{smsLog}', [SmsController::class, 'show']);
+        Route::get('/sms/{smsLog}/conversation', [SmsController::class, 'conversation']);
         Route::post('/sms/{smsLog}/retry', [SmsController::class, 'retry']);
     });
 

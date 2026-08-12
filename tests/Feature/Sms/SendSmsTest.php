@@ -129,4 +129,43 @@ class SendSmsTest extends TestCase
 
         Bus::assertDispatched(SendSmsJob::class);
     }
+
+    public function test_send_sms_with_valid_device_type(): void
+    {
+        Bus::fake();
+
+        $user = User::factory()->create();
+        $user->givePermissionTo('send-sms');
+        Passport::actingAs($user, [], 'api');
+
+        $response = $this->postJson('/api/v1/sms/send', [
+            'phone' => '+40721234567',
+            'message' => 'Hello IoT device',
+            'device_type' => 'iot',
+        ]);
+
+        $response->assertStatus(202);
+        $this->assertDatabaseHas('sms_logs', [
+            'phone' => '+40721234567',
+            'message' => 'Hello IoT device',
+            'device_type' => 'iot',
+            'user_id' => $user->id,
+        ]);
+    }
+
+    public function test_send_sms_rejects_invalid_device_type(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo('send-sms');
+        Passport::actingAs($user, [], 'api');
+
+        $response = $this->postJson('/api/v1/sms/send', [
+            'phone' => '+40721234567',
+            'message' => 'Hello',
+            'device_type' => 'invalid-type',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['device_type']);
+    }
 }

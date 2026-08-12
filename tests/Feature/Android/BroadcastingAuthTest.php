@@ -28,14 +28,16 @@ class BroadcastingAuthTest extends TestCase
         ]);
     }
 
-    private function channelName(): string
+    private function channelName(?string $deviceType = null): string
     {
-        return 'private-sms.'.$this->userId;
+        $type = $deviceType ?? $this->deviceToken->type;
+
+        return 'private-sms.'.$type.'.'.$this->userId;
     }
 
     public function test_missing_device_token_returns_401(): void
     {
-        $response = $this->postJson('/api/v1/android/broadcasting/auth', [
+        $response = $this->postJson('/api/v1/device/broadcasting/auth', [
             'socket_id' => '12345.67890',
             'channel_name' => $this->channelName(),
         ]);
@@ -46,7 +48,7 @@ class BroadcastingAuthTest extends TestCase
 
     public function test_invalid_device_token_returns_401(): void
     {
-        $response = $this->postJson('/api/v1/android/broadcasting/auth', [
+        $response = $this->postJson('/api/v1/device/broadcasting/auth', [
             'socket_id' => '12345.67890',
             'channel_name' => $this->channelName(),
         ], [
@@ -59,7 +61,7 @@ class BroadcastingAuthTest extends TestCase
 
     public function test_valid_device_token_returns_auth_signature(): void
     {
-        $response = $this->postJson('/api/v1/android/broadcasting/auth', [
+        $response = $this->postJson('/api/v1/device/broadcasting/auth', [
             'socket_id' => '12345.67890',
             'channel_name' => $this->channelName(),
         ], [
@@ -72,7 +74,7 @@ class BroadcastingAuthTest extends TestCase
 
     public function test_auth_signature_format(): void
     {
-        $response = $this->postJson('/api/v1/android/broadcasting/auth', [
+        $response = $this->postJson('/api/v1/device/broadcasting/auth', [
             'socket_id' => '12345.67890',
             'channel_name' => $this->channelName(),
         ], [
@@ -94,9 +96,9 @@ class BroadcastingAuthTest extends TestCase
     {
         $nonexistentId = '00000000-0000-0000-0000-000000000000';
 
-        $response = $this->postJson('/api/v1/android/broadcasting/auth', [
+        $response = $this->postJson('/api/v1/device/broadcasting/auth', [
             'socket_id' => '12345.67890',
-            'channel_name' => 'private-sms.'.$nonexistentId,
+            'channel_name' => 'private-sms.android.'.$nonexistentId,
         ], [
             'X-Device-Token' => $this->deviceToken->token,
         ]);
@@ -107,9 +109,9 @@ class BroadcastingAuthTest extends TestCase
 
     public function test_invalid_channel_name_format_is_rejected(): void
     {
-        $response = $this->postJson('/api/v1/android/broadcasting/auth', [
+        $response = $this->postJson('/api/v1/device/broadcasting/auth', [
             'socket_id' => '12345.67890',
-            'channel_name' => 'private-sms-channel',
+            'channel_name' => 'private-sms.'.$this->userId,
         ], [
             'X-Device-Token' => $this->deviceToken->token,
         ]);
@@ -126,9 +128,9 @@ class BroadcastingAuthTest extends TestCase
             'is_active' => true,
         ]);
 
-        $response = $this->postJson('/api/v1/android/broadcasting/auth', [
+        $response = $this->postJson('/api/v1/device/broadcasting/auth', [
             'socket_id' => '12345.67890',
-            'channel_name' => 'private-sms.'.$owner->id,
+            'channel_name' => 'private-sms.android.'.$owner->id,
         ], [
             'X-Device-Token' => $linkedDevice->token,
         ]);
@@ -147,13 +149,50 @@ class BroadcastingAuthTest extends TestCase
 
         $otherUser = User::factory()->create();
 
-        $response = $this->postJson('/api/v1/android/broadcasting/auth', [
+        $response = $this->postJson('/api/v1/device/broadcasting/auth', [
             'socket_id' => '12345.67890',
-            'channel_name' => 'private-sms.'.$otherUser->id,
+            'channel_name' => 'private-sms.android.'.$otherUser->id,
         ], [
             'X-Device-Token' => $linkedDevice->token,
         ]);
 
         $response->assertStatus(403);
+    }
+
+    public function test_device_cannot_subscribe_to_different_device_type_channel(): void
+    {
+        $owner = User::factory()->create();
+        $linkedDevice = DeviceToken::factory()->forUser($owner)->create([
+            'type' => 'android',
+            'is_active' => true,
+        ]);
+
+        $response = $this->postJson('/api/v1/device/broadcasting/auth', [
+            'socket_id' => '12345.67890',
+            'channel_name' => 'private-sms.iot.'.$owner->id,
+        ], [
+            'X-Device-Token' => $linkedDevice->token,
+        ]);
+
+        $response->assertStatus(403);
+    }
+
+    public function test_iot_device_can_subscribe_to_iot_channel(): void
+    {
+        $owner = User::factory()->create();
+        $iotDevice = DeviceToken::factory()->forUser($owner)->create([
+            'type' => 'iot',
+            'is_active' => true,
+        ]);
+
+        $response = $this->postJson('/api/v1/device/broadcasting/auth', [
+            'socket_id' => '12345.67890',
+            'channel_name' => 'private-sms.iot.'.$owner->id,
+        ], [
+            'X-Device-Token' => $iotDevice->token,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure(['auth']);
     }
 }

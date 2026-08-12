@@ -68,8 +68,10 @@ To terminate the SMS messages you need a device app (Android, IoT gateway, etc.)
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
+| `GET`  | `/api/v1/sms` | Bearer + `send-sms` | List all SMS for the authenticated user (paginated, newest first) with the device that handled each one. Supports `per_page`. |
 | `POST` | `/api/v1/sms/send` | Bearer + `send-sms` | Queue SMS for delivery (throttled 30/min). Optional `device_type` (`android`, `iot`). Returns `sms_log_id`. |
 | `GET`  | `/api/v1/sms/{smsLog}` | Bearer + `send-sms` | Check delivery status of a sent SMS |
+| `GET`  | `/api/v1/sms/{smsLog}/conversation` | Bearer + `send-sms` | Get a sent SMS together with its replies (matched by `external_id`) |
 | `POST` | `/api/v1/sms/{smsLog}/retry` | Bearer + `send-sms` | Re-queue a failed SMS for another delivery attempt |
 
 **SMS delivery flow:**
@@ -335,7 +337,7 @@ app/
 │   │   │   ├── Device/                          # Broadcasting auth, reply, status (Android, IoT, etc.)
 │   │   │   ├── Auth/AuthController.php          # PAT flow (register, login, logout)
 │   │   │   ├── Auth/AppAuthController.php       # PAT flow (register → AppClient, login, logout)
-│   │   │   ├── Sms/SmsController.php            # SMS send, status check, retry
+│   │   │   ├── Sms/SmsController.php            # SMS list, send, status check, conversation, retry
 │   │   │   └── User/DeviceController.php        # Device registration
 │   │   └── Auth/                                # Web auth (Bootstrap 5 UI)
 │   ├── Middleware/VerifyDeviceToken.php         # Static token auth for Device endpoints
