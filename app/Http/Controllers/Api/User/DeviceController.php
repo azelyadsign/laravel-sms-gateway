@@ -37,7 +37,7 @@ class DeviceController extends Controller
         $device = $request->user()->device()->updateOrCreate([], [
             'name' => $request->validated('name'),
             'type' => $request->validated('type'),
-            'token' => Str::random(64), // Generate a random token for the device
+            'token' => Str::random(32), // Generate a random token for the device
             'is_active' => true,
         ]);
 

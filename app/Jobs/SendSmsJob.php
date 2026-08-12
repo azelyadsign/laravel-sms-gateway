@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Events\SmsRequest;
 use App\Exceptions\SmsNotDeliveredException;
+use App\Models\DeviceToken;
 use App\Models\SmsLog;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -41,11 +42,26 @@ class SendSmsJob implements ShouldQueue
             return;
         }
 
+        // Resolve which device type channels to broadcast to.
+        // If a specific device type was requested, use it. Otherwise
+        // fall back to the user's registered device type. If the user
+        // has no device, default to 'android' for backward compatibility.
+        if ($log->device_type) {
+            $deviceTypes = [$log->device_type];
+        } else {
+            $userDevice = DeviceToken::query()
+                ->where('user_id', $log->user_id)
+                ->where('is_active', true)
+                ->first();
+            $deviceTypes = $userDevice ? [$userDevice->type] : ['android'];
+        }
+
         // Broadcast the SMS request to the phone via Reverb.
         SmsRequest::dispatch(
             phone: $log->phone,
             message: $log->message,
             userId: $log->user_id,
+            deviceTypes: $deviceTypes,
             smsLogId: $log->id,
         );
 

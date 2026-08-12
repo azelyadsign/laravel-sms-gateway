@@ -23,8 +23,8 @@ class SendSmsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'phone' => ['required', 'string', 'max:20'],
-            'message' => ['required', 'string', 'max:1600'],
+            'phone' => ['required', 'string', 'min:9', 'max:20'],
+            'message' => ['required', 'string', 'max:480'],
         ];
     }
 }

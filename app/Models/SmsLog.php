@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['phone', 'message', 'direction', 'status', 'external_id', 'raw_response', 'user_id', 'device_token_id'])]
+#[Fillable(['phone', 'message', 'direction', 'device_type', 'status', 'external_id', 'raw_response', 'user_id', 'device_token_id'])]
 class SmsLog extends Model
 {
     /** @use HasFactory<SmsLogFactory> */

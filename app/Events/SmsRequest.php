@@ -14,22 +14,28 @@ class SmsRequest implements ShouldBroadcastNow
 
     /**
      * Create a new event instance.
+     *
+     * @param  string[]  $deviceTypes
      */
     public function __construct(
         public string $phone,
         public string $message,
         public string $userId,
+        public array $deviceTypes,
         public ?string $smsLogId = null,
     ) {}
 
     /**
      * Get the channels the event should broadcast on.
+     *
+     * @return array<int, PrivateChannel>
      */
     public function broadcastOn(): array
     {
-        return [
-            new PrivateChannel('sms.'.$this->userId),
-        ];
+        return array_map(
+            fn (string $deviceType) => new PrivateChannel("sms.{$deviceType}.{$this->userId}"),
+            $this->deviceTypes,
+        );
     }
 
     /**

@@ -20,6 +20,7 @@ class SmsController extends Controller
             'phone' => $request->validated('phone'),
             'message' => $request->validated('message'),
             'direction' => 'sent',
+            'device_type' => $request->validated('device_type'),
             'status' => 'pending',
             'user_id' => $request->user()->id,
         ]);

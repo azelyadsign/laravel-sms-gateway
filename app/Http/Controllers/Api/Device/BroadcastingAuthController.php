@@ -12,23 +12,26 @@ use Illuminate\Validation\ValidationException;
 class BroadcastingAuthController extends Controller
 {
     /**
-     * Authenticate an Android device for a private broadcast channel.
+     * Authenticate a device for a private broadcast channel.
      *
      * Generates a Pusher-compatible HMAC-SHA256 signature using the
      * Reverb app secret so the device can subscribe to private channels.
      *
-     * The device (trusted gateway) is authorized to subscribe to any
-     * user-specific channel (private-sms.{userId}) as long as the user exists.
+     * Channels follow the format private-sms.{deviceType}.{userId}.
+     * A user-linked device may only subscribe to channels matching its
+     * own device type and owner. An unlinked device (admin gateway) may
+     * subscribe to any channel.
      */
     public function authenticate(Request $request): JsonResponse
     {
         $request->validate([
             'socket_id' => ['required', 'string'],
-            'channel_name' => ['required', 'string', 'regex:/^private-sms\.([a-f0-9-]{36})$/'],
+            'channel_name' => ['required', 'string', 'regex:/^private-sms\.([a-z]+)\.([a-f0-9-]{36})$/'],
         ]);
 
-        preg_match('/^private-sms\.([a-f0-9-]{36})$/', $request->input('channel_name'), $matches);
-        $userId = $matches[1];
+        preg_match('/^private-sms\.([a-z]+)\.([a-f0-9-]{36})$/', $request->input('channel_name'), $matches);
+        $deviceType = $matches[1];
+        $userId = $matches[2];
 
         if (! User::where('id', $userId)->exists()) {
             throw ValidationException::withMessages([
@@ -39,10 +42,16 @@ class BroadcastingAuthController extends Controller
         /** @var DeviceToken $deviceToken */
         $deviceToken = $request->attributes->get('deviceToken');
 
-        // A user-linked device may only subscribe to its owner's channel.
-        // An unlinked device (admin gateway) may subscribe to any user's channel.
-        if ($deviceToken->user_id !== null && $deviceToken->user_id !== $userId) {
-            abort(403, 'This device is not linked to the specified user.');
+        // A user-linked device may only subscribe to its owner's channel
+        // and must match its own device type.
+        if ($deviceToken->user_id !== null) {
+            if ($deviceToken->user_id !== $userId) {
+                abort(403, 'This device is not linked to the specified user.');
+            }
+
+            if ($deviceToken->type !== $deviceType) {
+                abort(403, "This device type '{$deviceToken->type}' cannot subscribe to '{$deviceType}' channels.");
+            }
         }
 
         $key = config('broadcasting.connections.reverb.key');
