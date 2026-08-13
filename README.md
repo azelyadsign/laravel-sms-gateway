@@ -11,8 +11,16 @@ Send SMS messages with no external services required or 3rd party integration â€
 
 Receive SMS replies from the phone and store them in the database for retrieval via API. Accepted replies yes/no/1/2/3.
 
+### Usage Destinations
+> Small to medium businesses, developers, and hobbyists who want to send SMS messages programmatically without relying on external services. Ideal for OTP codes, reservation systems with the possibility of confirmation, reminders.
+
 To terminate the SMS messages you need a device app (Android, IoT gateway, etc.) compatible with this API. The app listens for broadcast events on its device-type channel (`private-sms.android.{userId}`, `private-sms.iot.{userId}`, etc.), sends the SMS, and reports back the status.
 
+This app is capable of terminating sms messages requests from the gateway [Sms Gateway Client - Android](https://github.com/azelyadsign/Sms-Gateway-Client-Android).
+
+### ðŸ“œ Disclaimer
+> Use responsibly and comply with local laws regarding SMS messaging. **Do not abuse the service for spam** or unsolicited messages. The author is not responsible for any misuse of this software.
+> Charges for SMS delivery may be applied by your mobile operator. You must provide your own device capable of sending SMS messages.
 
 ## Tech Stack
 
@@ -91,11 +99,11 @@ To terminate the SMS messages you need a device app (Android, IoT gateway, etc.)
 
 ### Admin (requires `Admin` role)
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `GET` | `/api/v1/admin/users` | Bearer + Admin | List all users (paginated, sortable) |
-| `POST` | `/api/v1/admin/users/{user}/approve` | Bearer + Admin | Assign `Client` role to user |
-| `POST` | `/api/v1/admin/users/{user}/revoke` | Bearer + Admin | Remove all roles from user |
+| Method  | Endpoint | Auth | Description |
+|---------|----------|------|-------------|
+| `GET`   | `/api/v1/admin/users` | Bearer + Admin | List all users (paginated, sortable) |
+| `PATCH` | `/api/v1/admin/users/{user}/approve` | Bearer + Admin | Assign `Client` role to user |
+| `PATCH` | `/api/v1/admin/users/{user}/revoke` | Bearer + Admin | Remove all roles from user |
 
 ### Device API (device-token header)
 
