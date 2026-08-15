@@ -25,11 +25,12 @@ Route::prefix('v1')->group(function () {
             return new UserResource($request->user());
         });
 
-        // User device registration (requires send-sms permission: Client, AppClient, Admin)
+        // User device management (requires send-sms permission: Client, AppClient, Admin)
         Route::middleware('permission:send-sms')->group(function () {
-            Route::get('/user/device', [DeviceController::class, 'show']);
-            Route::post('/user/device', [DeviceController::class, 'store']);
-            Route::delete('/user/device', [DeviceController::class, 'destroy']);
+            Route::get('/user/devices', [DeviceController::class, 'index']);
+            Route::post('/user/devices', [DeviceController::class, 'store']);
+            Route::get('/user/devices/{device}', [DeviceController::class, 'show']);
+            Route::delete('/user/devices/{device}', [DeviceController::class, 'destroy']);
         });
     });
 

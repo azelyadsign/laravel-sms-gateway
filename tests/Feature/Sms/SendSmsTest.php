@@ -162,7 +162,7 @@ class SendSmsTest extends TestCase
         $response = $this->postJson('/api/v1/sms/send', [
             'phone' => '+40721234567',
             'message' => 'Hello',
-            'device_type' => 'invalid-type',
+            'device_type' => 'invalid-type@',
         ]);
 
         $response->assertStatus(422);

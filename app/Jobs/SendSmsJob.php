@@ -37,7 +37,7 @@ class SendSmsJob implements ShouldQueue
     {
         $log = SmsLog::findOrFail($this->smsLogId);
 
-        // Phone already reported status between retries — nothing to do.
+        // Phone already reported status between retries - nothing to do.
         if ($log->status !== 'pending') {
             return;
         }

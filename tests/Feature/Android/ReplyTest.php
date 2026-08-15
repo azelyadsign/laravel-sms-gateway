@@ -25,7 +25,7 @@ class ReplyTest extends TestCase
 
     public function test_missing_device_token_returns_401(): void
     {
-        $response = $this->postJson('/api/v1/android/reply', [
+        $response = $this->postJson('/api/v1/device/reply', [
             'event' => 'sms.reply',
             'data' => [
                 'phone' => '+40721234567',
@@ -38,7 +38,7 @@ class ReplyTest extends TestCase
 
     public function test_active_device_token_can_submit_reply(): void
     {
-        $response = $this->postJson('/api/v1/android/reply', [
+        $response = $this->postJson('/api/v1/device/reply', [
             'event' => 'sms.reply',
             'data' => [
                 'phone' => '+40721234567',
@@ -58,7 +58,7 @@ class ReplyTest extends TestCase
 
     public function test_reply_validates_data_phone_required(): void
     {
-        $response = $this->postJson('/api/v1/android/reply', [
+        $response = $this->postJson('/api/v1/device/reply', [
             'event' => 'sms.reply',
             'data' => [
                 'message' => 'Reply without phone',
@@ -73,7 +73,7 @@ class ReplyTest extends TestCase
 
     public function test_reply_creates_sms_log_record(): void
     {
-        $this->postJson('/api/v1/android/reply', [
+        $this->postJson('/api/v1/device/reply', [
             'event' => 'sms.reply',
             'data' => [
                 'phone' => '+40721234567',
@@ -100,7 +100,7 @@ class ReplyTest extends TestCase
             'is_active' => false,
         ]);
 
-        $response = $this->postJson('/api/v1/android/reply', [
+        $response = $this->postJson('/api/v1/device/reply', [
             'event' => 'sms.reply',
             'data' => [
                 'phone' => '+40721234567',
@@ -121,7 +121,7 @@ class ReplyTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->postJson('/api/v1/android/reply', [
+        $this->postJson('/api/v1/device/reply', [
             'event' => 'sms.reply',
             'data' => [
                 'phone' => '+40721234567',

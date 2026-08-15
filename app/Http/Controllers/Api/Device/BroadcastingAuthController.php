@@ -26,10 +26,10 @@ class BroadcastingAuthController extends Controller
     {
         $request->validate([
             'socket_id' => ['required', 'string'],
-            'channel_name' => ['required', 'string', 'regex:/^private-sms\.([a-z]+)\.([a-f0-9-]{36})$/'],
+            'channel_name' => ['required', 'string', 'regex:/^private-sms\.([A-Za-z0-9_]+)\.([a-f0-9-]{36})$/'],
         ]);
 
-        preg_match('/^private-sms\.([a-z]+)\.([a-f0-9-]{36})$/', $request->input('channel_name'), $matches);
+        preg_match('/^private-sms\.([A-Za-z0-9_]+)\.([a-f0-9-]{36})$/', $request->input('channel_name'), $matches);
         $deviceType = $matches[1];
         $userId = $matches[2];
 

@@ -7,7 +7,7 @@
 
 A Laravel 13 REST API for SMS gateway management with OAuth2 authentication, role-based access control, and real-time broadcasting.
 
-Send SMS messages with no external services required or 3rd party integration — designed for devices (Android phones, IoT modems, etc.) to receive the broadcast via WebSocket events on device-type-specific channels, generate the SMS, and report back delivery status.
+Send SMS messages with no external services required or 3rd party integration - designed for devices (Android phones, IoT modems, etc.) to receive the broadcast via WebSocket events on device-type-specific channels, generate the SMS, and report back delivery status.
 
 Receive SMS replies from the phone and store them in the database for retrieval via API. Accepted replies yes/no/1/2/3.
 
@@ -57,12 +57,12 @@ This app is capable of terminating sms messages requests from the gateway [Sms G
 
 ### Auth (Personal Access Tokens)
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `POST` | `/api/v1/register` | Public | Register (throttled 6/min). No role assigned — pending approval. |
-| `POST` | `/api/v1/login` | Public | Login, returns user + access token |
-| `POST` | `/api/v1/logout` | Bearer | Revoke current token |
-| `GET`  | `/api/v1/user` | Bearer | Get authenticated user profile |
+| Method | Endpoint | Auth | Description                                                      |
+|--------|----------|------|------------------------------------------------------------------|
+| `POST` | `/api/v1/register` | Public | Register (throttled 6/min). No role assigned - pending approval. |
+| `POST` | `/api/v1/login` | Public | Login, returns user + access token                               |
+| `POST` | `/api/v1/logout` | Bearer | Revoke current token                                             |
+| `GET`  | `/api/v1/user` | Bearer | Get authenticated user profile                                   |
 
 ### App Auth (Personal Access Tokens - long-lived, no refresh)
 
@@ -89,13 +89,16 @@ This app is capable of terminating sms messages requests from the gateway [Sms G
 4. If the phone doesn't respond, the job retries up to 3 times with progressive backoff (2s, 5s, 10s).
 5. After all retries exhausted, the `SmsLog` is marked `failed`. The user can retry via the retry endpoint.
 
-### User Device
+### User Devices
+
+Users can register multiple devices (Android phone, IoT modem, etc.). Each registration returns a unique device `token` used as the `X-Device-Token` header for the Device API endpoints.
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| `GET` | `/api/v1/user/device` | Bearer + `send-sms` | Show registered device |
-| `POST` | `/api/v1/user/device` | Bearer + `send-sms` | Register a device |
-| `DELETE` | `/api/v1/user/device` | Bearer + `send-sms` | Remove registered device |
+| `GET` | `/api/v1/user/devices` | Bearer + `send-sms` | List all registered devices |
+| `POST` | `/api/v1/user/devices` | Bearer + `send-sms` | Register a new device (returns device `token`) |
+| `GET` | `/api/v1/user/devices/{device}` | Bearer + `send-sms` | Show a specific device |
+| `DELETE` | `/api/v1/user/devices/{device}` | Bearer + `send-sms` | Remove a specific device |
 
 ### Admin (requires `Admin` role)
 
@@ -107,7 +110,8 @@ This app is capable of terminating sms messages requests from the gateway [Sms G
 
 ### Device API (device-token header)
 
-Devices authenticate with a static `X-Device-Token` header. Each device type subscribes to its own broadcast channel (`private-sms.{deviceType}.{userId}`). Supported types: `android`, `iot`.
+Devices authenticate with a static `X-Device-Token` header.
+Each device type subscribes to its own broadcast channel (`private-sms.{deviceType}.{userId}`).
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
@@ -119,13 +123,11 @@ Devices authenticate with a static `X-Device-Token` header. Each device type sub
 
 ```bash
 # Clone and install
-git clone <repo-url> && cd smsgate
+git clone https://github.com/azelyadsign/laravel-sms-gateway.git && cd laravel-sms-gateway
+
 cp .env.example .env
 touch database/database.sqlite
 
-composer setup
-
-# Or step by step
 composer install
 php artisan key:generate
 php artisan migrate --force
@@ -138,7 +140,35 @@ php artisan passport:client --personal --no-interaction
 
 # Seed roles, permissions, and admin user
 php artisan db:seed
+
+# If readonly database error
+chmod -R 775 database/
 ```
+
+## Environment
+
+```env
+APP_NAME=SmsGateway
+APP_URL=https://example.domain
+
+DB_CONNECTION=sqlite
+SESSION_DRIVER=database
+QUEUE_CONNECTION=database
+CACHE_STORE=database
+
+BROADCAST_CONNECTION=reverb
+REVERB_APP_KEY=your-app-key
+REVERB_APP_SECRET=your-app-secret
+REVERB_APP_ID=81001
+REVERB_HOST=example.domain
+REVERB_PORT=443
+REVERB_SCHEME=https
+```
+
+Everything runs off a single SQLite file - sessions, queue, and cache all use the `database` driver. No Redis or external services required.
+
+Do not forget to set your domain in the .env for `APP_URL` and `REVERB_HOST`. Also generate a ssl cert for it.
+
 ## Server Setup example
 For ubuntu 24.04, you can use the following to set up the server:
 
@@ -178,6 +208,8 @@ supervisorctl start all
 # Nginx config for SmsGateway example at /etc/nginx/sites-available/laravel-sms-gateway.conf
 
 server {
+    listen 443 ssl;
+    
     server_name example.domain;
     root /var/www/laravel-sms-gateway/public;
 
@@ -244,19 +276,17 @@ server {
     location ~ /\.(?!well-known).* { deny all; }
     location ~ /\.git { deny all; }
     location ~* ^/storage/.*\.php$ { deny all; }
-
-    listen 443 ssl;
-
+    
     ssl_certificate /etc/letsencrypt/live/example.domain/fullchain.pem; # managed by Certbot
     ssl_certificate_key /etc/letsencrypt/live/example.domain/privkey.pem; # managed by Certbot
     include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
-
 }
 
 server {
-    server_name example.domain;
     listen 80;
+    server_name example.domain;
+    
     return 404;
 
     location ^~ /.well-known/acme-challenge/ {
@@ -284,30 +314,6 @@ The app will be available at `https://example.domain` (or `https://localhost` de
 | Email | Password |
 |-------|----------|
 | `admin@example.com` | `password` |
-
-## Environment
-
-```env
-APP_NAME=SmsGateway
-APP_URL=https://localhost
-
-DB_CONNECTION=sqlite
-SESSION_DRIVER=database
-QUEUE_CONNECTION=database
-CACHE_STORE=database
-
-BROADCAST_CONNECTION=reverb
-REVERB_APP_KEY=your-app-key
-REVERB_APP_SECRET=your-app-secret
-REVERB_APP_ID=81001
-REVERB_HOST=your-app-host.tld
-REVERB_PORT=443
-REVERB_SCHEME=https
-```
-
-Everything runs off a single SQLite file - sessions, queue, and cache all use the `database` driver. No Redis or external services required.
-
-If you switch broadcasting to Reverb, set `BROADCAST_CONNECTION=reverb` and fill in the Reverb variables. The Device endpoints expect Pusher-compatible broadcasting channels.
 
 ### SMS Polling Configuration
 
@@ -346,7 +352,7 @@ app/
 │   │   │   ├── Auth/AuthController.php          # PAT flow (register, login, logout)
 │   │   │   ├── Auth/AppAuthController.php       # PAT flow (register → AppClient, login, logout)
 │   │   │   ├── Sms/SmsController.php            # SMS list, send, status check, conversation, retry
-│   │   │   └── User/DeviceController.php        # Device registration
+│   │   │   └── User/DeviceController.php        # Device management (list, register, show, remove)
 │   │   └── Auth/                                # Web auth (Bootstrap 5 UI)
 │   ├── Middleware/VerifyDeviceToken.php         # Static token auth for Device endpoints
 │   └── Resources/UserResource.php               # JSON:API resource for users

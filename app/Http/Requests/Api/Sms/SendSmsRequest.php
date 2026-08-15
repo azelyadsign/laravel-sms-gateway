@@ -24,7 +24,8 @@ class SendSmsRequest extends FormRequest
     {
         return [
             'phone' => ['required', 'string', 'min:9', 'max:20'],
-            'message' => ['required', 'string', 'max:480'],
+            'message' => ['required', 'string', 'max:480'], // representing 3 sms messages
+            'device_type' => ['nullable', 'string', 'alpha_dash'],
         ];
     }
 }

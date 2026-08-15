@@ -31,7 +31,7 @@ class StatusTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $response = $this->postJson('/api/v1/android/status', [
+        $response = $this->postJson('/api/v1/device/status', [
             'sms_log_id' => $smsLog->id,
             'status' => 'delivered',
         ]);
@@ -51,7 +51,7 @@ class StatusTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $response = $this->postJson('/api/v1/android/status', [
+        $response = $this->postJson('/api/v1/device/status', [
             'sms_log_id' => $smsLog->id,
             'status' => 'delivered',
         ], [
@@ -68,7 +68,7 @@ class StatusTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $response = $this->postJson('/api/v1/android/status', [
+        $response = $this->postJson('/api/v1/device/status', [
             'sms_log_id' => $smsLog->id,
             'status' => 'delivered',
         ], [
@@ -89,7 +89,7 @@ class StatusTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $this->postJson('/api/v1/android/status', [
+        $this->postJson('/api/v1/device/status', [
             'sms_log_id' => $smsLog->id,
             'status' => 'delivered',
             'raw_response' => '{"code":0,"message":"OK"}',
@@ -114,7 +114,7 @@ class StatusTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $this->postJson('/api/v1/android/status', [
+        $this->postJson('/api/v1/device/status', [
             'sms_log_id' => $smsLog->id,
             'status' => 'sent',
         ], [
@@ -141,7 +141,7 @@ class StatusTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $this->postJson('/api/v1/android/status', [
+        $this->postJson('/api/v1/device/status', [
             'sms_log_id' => $smsLog->id,
             'status' => 'delivered',
         ], [
@@ -157,7 +157,7 @@ class StatusTest extends TestCase
 
     public function test_sms_log_id_is_required(): void
     {
-        $response = $this->postJson('/api/v1/android/status', [
+        $response = $this->postJson('/api/v1/device/status', [
             'status' => 'delivered',
         ], [
             'X-Device-Token' => $this->deviceToken->token,
@@ -174,7 +174,7 @@ class StatusTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $response = $this->postJson('/api/v1/android/status', [
+        $response = $this->postJson('/api/v1/device/status', [
             'sms_log_id' => $smsLog->id,
         ], [
             'X-Device-Token' => $this->deviceToken->token,
@@ -186,7 +186,7 @@ class StatusTest extends TestCase
 
     public function test_sms_log_id_must_exist(): void
     {
-        $response = $this->postJson('/api/v1/android/status', [
+        $response = $this->postJson('/api/v1/device/status', [
             'sms_log_id' => 'non-existent-id',
             'status' => 'delivered',
         ], [

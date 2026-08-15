@@ -56,7 +56,7 @@ class AdminTest extends TestCase
 
         $client = User::factory()->create();
 
-        $response = $this->postJson("/api/v1/admin/users/{$client->id}/approve");
+        $response = $this->patchJson("/api/v1/admin/users/{$client->id}/approve");
 
         $response->assertStatus(200);
         $response->assertJson(['message' => 'User approved successfully.']);
@@ -73,7 +73,7 @@ class AdminTest extends TestCase
         $client = User::factory()->create();
         $client->assignRole('Client');
 
-        $response = $this->postJson("/api/v1/admin/users/{$client->id}/approve");
+        $response = $this->patchJson("/api/v1/admin/users/{$client->id}/approve");
 
         $response->assertStatus(409);
     }
@@ -87,7 +87,7 @@ class AdminTest extends TestCase
         $client = User::factory()->create();
         $client->assignRole('Client');
 
-        $response = $this->postJson("/api/v1/admin/users/{$client->id}/revoke");
+        $response = $this->patchJson("/api/v1/admin/users/{$client->id}/revoke");
 
         $response->assertStatus(200);
         $response->assertJson(['message' => 'User roles revoked successfully.']);
@@ -103,7 +103,7 @@ class AdminTest extends TestCase
 
         $client = User::factory()->create();
 
-        $response = $this->postJson("/api/v1/admin/users/{$client->id}/revoke");
+        $response = $this->patchJson("/api/v1/admin/users/{$client->id}/revoke");
 
         $response->assertStatus(409);
     }
@@ -115,7 +115,7 @@ class AdminTest extends TestCase
 
         $client = User::factory()->create();
 
-        $response = $this->postJson("/api/v1/admin/users/{$client->id}/approve");
+        $response = $this->patchJson("/api/v1/admin/users/{$client->id}/approve");
 
         $response->assertStatus(403);
     }

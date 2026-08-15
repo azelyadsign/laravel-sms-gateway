@@ -27,7 +27,7 @@ class DeviceTest extends TestCase
 
     public function test_unauthenticated_request_is_rejected(): void
     {
-        $response = $this->getJson('/api/v1/user/device');
+        $response = $this->getJson('/api/v1/user/devices');
 
         $response->assertStatus(401);
     }
@@ -37,7 +37,7 @@ class DeviceTest extends TestCase
         $user = User::factory()->create();
         Passport::actingAs($user, [], 'api');
 
-        $response = $this->getJson('/api/v1/user/device');
+        $response = $this->getJson('/api/v1/user/devices');
 
         $response->assertStatus(403);
     }
@@ -48,18 +48,19 @@ class DeviceTest extends TestCase
         $user->assignRole('Client');
         Passport::actingAs($user, [], 'api');
 
-        $token = Str::random(64);
-
-        $response = $this->postJson('/api/v1/user/device', [
+        $response = $this->postJson('/api/v1/user/devices', [
             'name' => 'My Android Phone',
             'type' => 'android',
-            'token' => $token,
         ]);
 
         $response->assertStatus(201);
-        $response->assertJsonPath('device.data.attributes.name', 'My Android Phone');
-        $response->assertJsonPath('device.data.attributes.type', 'android');
-        $response->assertJsonMissingPath('device.data.attributes.token');
+        $response->assertJsonPath('data.attributes.name', 'My Android Phone');
+        $response->assertJsonPath('data.attributes.type', 'android');
+        $response->assertJsonPath('data.attributes.is_active', true);
+
+        $token = $response->json('data.attributes.token');
+        $this->assertIsString($token);
+        $this->assertSame(32, strlen($token));
 
         $this->assertDatabaseHas('device_tokens', [
             'user_id' => $user->id,
@@ -74,10 +75,10 @@ class DeviceTest extends TestCase
         $user->assignRole('Client');
         Passport::actingAs($user, [], 'api');
 
-        $response = $this->postJson('/api/v1/user/device', []);
+        $response = $this->postJson('/api/v1/user/devices', []);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['name', 'type', 'token']);
+        $response->assertJsonValidationErrors(['name', 'type']);
     }
 
     public function test_register_rejects_invalid_type(): void
@@ -86,84 +87,80 @@ class DeviceTest extends TestCase
         $user->assignRole('Client');
         Passport::actingAs($user, [], 'api');
 
-        $response = $this->postJson('/api/v1/user/device', [
+        $response = $this->postJson('/api/v1/user/devices', [
             'name' => 'My Device',
-            'type' => 'invalid-type',
-            'token' => Str::random(64),
+            'type' => 'invalid-type@',
+            'token' => Str::random(32),
         ]);
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['type']);
     }
 
-    public function test_register_rejects_token_owned_by_another_user(): void
-    {
-        $otherUser = User::factory()->create();
-        $existingToken = Str::random(64);
-        DeviceToken::factory()->forUser($otherUser)->create(['token' => $existingToken]);
-
-        $user = User::factory()->create();
-        $user->assignRole('Client');
-        Passport::actingAs($user, [], 'api');
-
-        $response = $this->postJson('/api/v1/user/device', [
-            'name' => 'My Device',
-            'type' => 'android',
-            'token' => $existingToken,
-        ]);
-
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['token']);
-    }
-
-    public function test_register_rejects_gateway_token(): void
-    {
-        $gatewayToken = Str::random(64);
-        DeviceToken::factory()->create(['token' => $gatewayToken]);
-
-        $user = User::factory()->create();
-        $user->assignRole('Client');
-        Passport::actingAs($user, [], 'api');
-
-        $response = $this->postJson('/api/v1/user/device', [
-            'name' => 'My Device',
-            'type' => 'android',
-            'token' => $gatewayToken,
-        ]);
-
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['token']);
-    }
-
-    public function test_register_same_token_updates_existing_device(): void
+    public function test_user_can_register_multiple_devices(): void
     {
         $user = User::factory()->create();
         $user->assignRole('Client');
         Passport::actingAs($user, [], 'api');
-
-        $token = Str::random(64);
 
         // First registration
-        $first = $this->postJson('/api/v1/user/device', [
+        $first = $this->postJson('/api/v1/user/devices', [
             'name' => 'My Android',
             'type' => 'android',
-            'token' => $token,
         ]);
         $first->assertStatus(201);
 
-        // Second registration with same token should update
-        $second = $this->postJson('/api/v1/user/device', [
-            'name' => 'My Updated Android',
-            'type' => 'android',
-            'token' => $token,
+        // Second registration creates a new device instead of updating the first
+        $second = $this->postJson('/api/v1/user/devices', [
+            'name' => 'My Other Phone',
+            'type' => 'galaxy-s22',
         ]);
-        $second->assertStatus(200);
+        $second->assertStatus(201);
 
-        $this->assertEquals(1, DeviceToken::where('user_id', $user->id)->count());
+        $this->assertEquals(2, DeviceToken::where('user_id', $user->id)->count());
         $this->assertDatabaseHas('device_tokens', [
             'user_id' => $user->id,
-            'name' => 'My Updated Android',
+            'name' => 'My Android',
         ]);
+        $this->assertDatabaseHas('device_tokens', [
+            'user_id' => $user->id,
+            'name' => 'My Other Phone',
+        ]);
+        $this->assertNotSame(
+            $first->json('data.attributes.token'),
+            $second->json('data.attributes.token'),
+        );
+    }
+
+    public function test_index_lists_all_registered_devices(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('Client');
+        Passport::actingAs($user, [], 'api');
+
+        $phone = DeviceToken::factory()->forUser($user)->create(['name' => 'My Phone']);
+        $tablet = DeviceToken::factory()->forUser($user)->create(['name' => 'My Tablet']);
+
+        $response = $this->getJson('/api/v1/user/devices');
+
+        $response->assertStatus(200);
+        $response->assertJsonCount(2, 'data');
+        $response->assertJsonPath('data.0.id', $phone->id);
+        $response->assertJsonPath('data.1.id', $tablet->id);
+        $response->assertJsonPath('data.0.attributes.name', 'My Phone');
+        $response->assertJsonPath('data.1.attributes.name', 'My Tablet');
+    }
+
+    public function test_index_returns_empty_list_without_devices(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('Client');
+        Passport::actingAs($user, [], 'api');
+
+        $response = $this->getJson('/api/v1/user/devices');
+
+        $response->assertStatus(200);
+        $response->assertJsonCount(0, 'data');
     }
 
     public function test_show_returns_registered_device(): void
@@ -174,24 +171,37 @@ class DeviceTest extends TestCase
 
         $device = DeviceToken::factory()->forUser($user)->create();
 
-        $response = $this->getJson('/api/v1/user/device');
+        $response = $this->getJson('/api/v1/user/devices/'.$device->id);
 
         $response->assertStatus(200);
-        $response->assertJsonPath('device.data.id', $device->id);
-        $response->assertJsonPath('device.data.attributes.name', $device->name);
-        $response->assertJsonMissingPath('device.data.attributes.token');
+        $response->assertJsonPath('data.id', $device->id);
+        $response->assertJsonPath('data.attributes.name', $device->name);
+        $response->assertJsonPath('data.attributes.token', $device->token);
     }
 
-    public function test_show_returns_404_without_device(): void
+    public function test_show_returns_404_for_unknown_device(): void
     {
         $user = User::factory()->create();
         $user->assignRole('Client');
         Passport::actingAs($user, [], 'api');
 
-        $response = $this->getJson('/api/v1/user/device');
+        $response = $this->getJson('/api/v1/user/devices/'.Str::uuid());
 
         $response->assertStatus(404);
-        $response->assertJson(['message' => 'No device registered.']);
+    }
+
+    public function test_cannot_show_another_users_device(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('Client');
+        Passport::actingAs($user, [], 'api');
+
+        $otherUser = User::factory()->create();
+        $device = DeviceToken::factory()->forUser($otherUser)->create();
+
+        $response = $this->getJson('/api/v1/user/devices/'.$device->id);
+
+        $response->assertStatus(403);
     }
 
     public function test_destroy_removes_device(): void
@@ -200,42 +210,28 @@ class DeviceTest extends TestCase
         $user->assignRole('Client');
         Passport::actingAs($user, [], 'api');
 
-        DeviceToken::factory()->forUser($user)->create();
+        $device = DeviceToken::factory()->forUser($user)->create();
 
-        $response = $this->deleteJson('/api/v1/user/device');
+        $response = $this->deleteJson('/api/v1/user/devices/'.$device->id);
 
         $response->assertStatus(200);
         $response->assertJson(['message' => 'Device removed successfully.']);
 
-        $this->assertDatabaseMissing('device_tokens', ['user_id' => $user->id]);
+        $this->assertDatabaseMissing('device_tokens', ['id' => $device->id]);
     }
 
-    public function test_user_can_only_have_one_device(): void
+    public function test_cannot_destroy_another_users_device(): void
     {
         $user = User::factory()->create();
         $user->assignRole('Client');
         Passport::actingAs($user, [], 'api');
 
-        $tokenA = Str::random(64);
-        $tokenB = Str::random(64);
+        $otherUser = User::factory()->create();
+        $device = DeviceToken::factory()->forUser($otherUser)->create();
 
-        $this->postJson('/api/v1/user/device', [
-            'name' => 'Device A',
-            'type' => 'android',
-            'token' => $tokenA,
-        ]);
+        $response = $this->deleteJson('/api/v1/user/devices/'.$device->id);
 
-        $this->postJson('/api/v1/user/device', [
-            'name' => 'Device B',
-            'type' => 'android',
-            'token' => $tokenB,
-        ]);
-
-        $this->assertEquals(1, DeviceToken::where('user_id', $user->id)->count());
-        $this->assertDatabaseHas('device_tokens', [
-            'user_id' => $user->id,
-            'name' => 'Device B',
-            'token' => $tokenB,
-        ]);
+        $response->assertStatus(403);
+        $this->assertDatabaseHas('device_tokens', ['id' => $device->id]);
     }
 }

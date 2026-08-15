@@ -4,7 +4,6 @@ namespace App\Http\Requests\Api\User;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class DeviceRequest extends FormRequest
 {
@@ -25,7 +24,7 @@ class DeviceRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'string', Rule::in(['android', 'iot'])],
+            'type' => ['required', 'string', 'min:3', 'alpha_dash'],
         ];
     }
 }
